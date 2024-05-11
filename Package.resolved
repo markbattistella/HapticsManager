@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "defaultskit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/markbattistella/DefaultsKit",
+      "state" : {
+        "revision" : "87c18636b44f422732d34bfc88c17cc2d8d56005",
+        "version" : "1.0.2"
+      }
+    }
+  ],
+  "version" : 2
+}
