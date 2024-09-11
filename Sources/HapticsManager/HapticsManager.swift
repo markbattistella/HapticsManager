@@ -7,9 +7,16 @@
 #if os(iOS)
 
 import SwiftUI
+import OSLog
+import SimpleLogger
 
 public typealias FBStyle = UIImpactFeedbackGenerator.FeedbackStyle
 public typealias FBType = UINotificationFeedbackGenerator.FeedbackType
+
+/// Extension to `LoggerCategory` to add a custom category for package haptic management.
+extension LoggerCategory {
+    internal static let packageHapticsManager = LoggerCategory("PackageHapticsManager")
+}
 
 /// A manager responsible for handling haptic feedback throughout the iOS application.
 ///
@@ -47,6 +54,9 @@ internal final class HapticsManager {
     internal var appWideEnabled: Bool {
         settingsQueue.sync { _appWideEnabled }
     }
+
+    /// A logger instance dedicated to haptics to handle and filter log outputs.
+    private let logger = Logger(category: .packageHapticsManager)
 
     /// Initializes the `HapticsManager` with default settings.
     ///
@@ -179,7 +189,7 @@ extension HapticsManager {
     /// - Parameter message: The message to be logged.
     private func log(_ message: String) {
         if settings.isLoggingEnabled {
-            print("[HapticsManager] \(message)")
+            logger.log("\(message, privacy: .public)")
         }
     }
 }

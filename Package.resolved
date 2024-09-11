@@ -8,6 +8,15 @@
         "revision" : "fa4809c496796ddfa669157c4f522f29951cb23e",
         "version" : "1.1.0"
       }
+    },
+    {
+      "identity" : "simplelogger",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/markbattistella/SimpleLogger",
+      "state" : {
+        "revision" : "7068e5c77951e81870b5054e553f25d00aa273c1",
+        "version" : "1.0.1"
+      }
     }
   ],
   "version" : 2
