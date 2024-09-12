@@ -9,6 +9,7 @@
 import SwiftUI
 import OSLog
 import SimpleLogger
+import DefaultsKit
 
 public typealias FBStyle = UIImpactFeedbackGenerator.FeedbackStyle
 public typealias FBType = UINotificationFeedbackGenerator.FeedbackType
@@ -23,54 +24,81 @@ extension LoggerCategory {
 /// This class provides a singleton instance that ensures consistent haptic feedback behavior
 /// across the app based on user preferences and device capabilities.
 internal final class HapticsManager {
-
+    
     /// The shared instance of `HapticsManager` for app-wide use.
     internal static let shared = HapticsManager()
-
+    
+    /// Returns the shared defaults object.
+    private let defaults = UserDefaults.standard
+    
     /// A generator for producing notification-style haptic feedback.
     private let notificationFeedback = UINotificationFeedbackGenerator()
-
+    
     /// A cache of `UIImpactFeedbackGenerator` instances, indexed by their feedback style.
     private lazy var impactFeedbackGenerators: [FBStyle: UIImpactFeedbackGenerator] = [:]
-
+    
     /// A private property that tracks whether haptic feedback is enabled app-wide.
     private var _appWideEnabled: Bool {
-        didSet {
-            log("Haptic settings changed: appWideEnabled is now \(_appWideEnabled)")
-        }
+        didSet { log("Haptic settings changed: appWideEnabled is now \(_appWideEnabled)") }
     }
-
+    
     /// A private queue used to synchronize access to settings to ensure thread safety.
     private let settingsQueue = DispatchQueue(
-        label: "com.markbattistella.hapticManager",
+        label: "com.markbattistella.hapticsManager",
         attributes: .concurrent
     )
-
+    
     /// The current settings for managing haptic feedback.
     private var settings: HapticSettings
-
+    
     /// Indicates whether haptic feedback is enabled for the application, synchronized for
     /// thread safety.
     internal var appWideEnabled: Bool {
         settingsQueue.sync { _appWideEnabled }
     }
-
+    
     /// A logger instance dedicated to haptics to handle and filter log outputs.
     private let logger = Logger(category: .packageHapticsManager)
-
+    
+    /// The count of log attempts, retrieved from UserDefaults.
+    private var logAttemptCount: Int {
+        get { defaults.integer(for: HapticUserDefaultKeys.hapticLogAttemptCount) }
+        set { defaults.set(newValue, for: HapticUserDefaultKeys.hapticLogAttemptCount) }
+    }
+    
+    /// The last time a log was made, retrieved from UserDefaults.
+    private var lastLogTime: Date {
+        get { defaults.date(for: HapticUserDefaultKeys.hapticLogLastLogDate) ?? .now }
+        set { defaults.set(newValue, for: HapticUserDefaultKeys.hapticLogLastLogDate) }
+    }
+    
+    /// The threshold for log attempts before logging again, retrieved from settings.
+    private var logThreshold: Int {
+        settings.loggingThreshold
+    }
+    
+    /// The cooldown period in seconds before allowing another log, retrieved from settings.
+    private var logCooldown: TimeInterval {
+        settings.loggingCooldown
+    }
+    
+    // MARK: - Initializers
+    
     /// Initializes the `HapticsManager` with default settings.
     ///
     /// This initializer sets up the manager with default `UserDefaultsHapticSettings` and begins
     /// observing changes to user defaults to update settings in real-time.
-    private init(settings: HapticSettings = HapticUserDefaultsSettings(
-        hapticEnabledKey: HapticUserDefaultKeys.hapticEffectsEnabled,
-        loggingEnabledKey: HapticUserDefaultKeys.hapticLoggingEnabled
-    )) {
-        self.settings = settings
+    private init() {
+        self.settings = HapticUserDefaultsSettings(
+            hapticEnabledKey: HapticUserDefaultKeys.hapticEffectsEnabled,
+            hapticLoggingEnabledKey: HapticUserDefaultKeys.hapticLoggingEnabled,
+            hapticLoggingThresholdKey: HapticUserDefaultKeys.hapticLogThreshold,
+            hapticLoggingCooldownKey: HapticUserDefaultKeys.hapticLogCooldown
+        )
         self._appWideEnabled = settings.isEnabled
         observeUserDefaultsChanges()
     }
-
+    
     /// Deinitializes the `HapticsManager`, removing any observers to prevent memory leaks.
     deinit {
         NotificationCenter.default.removeObserver(
@@ -84,7 +112,7 @@ internal final class HapticsManager {
 // MARK: - Setup methods
 
 extension HapticsManager {
-
+    
     /// Sets up observation of changes to user defaults to update the `appWideEnabled` property.
     ///
     /// Observes `UserDefaults.didChangeNotification` on a background queue to respond to changes
@@ -93,12 +121,12 @@ extension HapticsManager {
         NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification,
             object: nil,
-            queue: OperationQueue() // Using a background queue instead of the main thread
+            queue: OperationQueue()
         ) { [weak self] _ in
             self?.updateAppWideEnabled()
         }
     }
-
+    
     /// Updates the `appWideEnabled` property based on the current settings in a thread-safe
     /// manner.
     ///
@@ -107,9 +135,10 @@ extension HapticsManager {
     private func updateAppWideEnabled() {
         settingsQueue.async(flags: .barrier) {
             self._appWideEnabled = self.settings.isEnabled
+            self.resetLogTrackingIfHapticsEnabled()
         }
     }
-
+    
     /// Sets custom haptic settings for the manager, allowing for testing or alternative
     /// configurations.
     ///
@@ -118,6 +147,7 @@ extension HapticsManager {
         settingsQueue.async(flags: .barrier) {
             self.settings = customSettings
             self._appWideEnabled = customSettings.isEnabled
+            self.resetLogTrackingIfHapticsEnabled()
         }
     }
 }
@@ -125,7 +155,7 @@ extension HapticsManager {
 // MARK: - Feedback methods
 
 extension HapticsManager {
-
+    
     /// Triggers a notification-style haptic feedback if haptics are supported and enabled.
     ///
     /// - Parameter level: The type of notification feedback to trigger.
@@ -133,7 +163,7 @@ extension HapticsManager {
         guard await canTriggerHaptic() else { return }
         await notificationFeedback.notificationOccurred(level)
     }
-
+    
     /// Triggers an impact-style haptic feedback if haptics are supported and enabled.
     ///
     /// - Parameter level: The style of impact feedback to trigger.
@@ -142,7 +172,7 @@ extension HapticsManager {
         let generator = await impactFeedbackGenerator(for: level)
         await generator.impactOccurred()
     }
-
+    
     /// Provides an impact feedback generator for the specified feedback style, creating one if
     /// necessary.
     ///
@@ -167,7 +197,15 @@ extension HapticsManager {
 // MARK: - Helper methods
 
 extension HapticsManager {
-
+    
+    /// Resets log tracking if haptics are re-enabled to prevent unnecessary log suppression.
+    private func resetLogTrackingIfHapticsEnabled() {
+        if _appWideEnabled {
+            logAttemptCount = 0
+            lastLogTime = Date()
+        }
+    }
+    
     /// Checks whether haptic feedback can be triggered based on device capability and user
     /// settings.
     ///
@@ -183,13 +221,24 @@ extension HapticsManager {
         }
         return true
     }
-
-    /// Logs messages for debugging purposes if logging is enabled.
+    
+    /// Logs messages for debugging purposes if logging is enabled, with suppression logic.
     ///
     /// - Parameter message: The message to be logged.
-    private func log(_ message: String) {
-        if settings.isLoggingEnabled {
-            logger.log("\(message, privacy: .public)")
+    private func log(_ message: String, logLimit: Int = Int.max) {
+        logAttemptCount += 1
+        let currentTime = Date()
+        
+        // Only log if below the limit for this app session
+        guard logAttemptCount <= logLimit else { return }
+        
+        // Log only if the threshold is reached or cooldown period has passed
+        if logAttemptCount >= logThreshold || currentTime.timeIntervalSince(lastLogTime) >= logCooldown {
+            if settings.isLoggingEnabled {
+                logger.log("\(message, privacy: .public)")
+            }
+            logAttemptCount = 0
+            lastLogTime = currentTime
         }
     }
 }
@@ -201,10 +250,10 @@ extension HapticsManager {
 /// This modifier listens for a tap gesture on the view it modifies and triggers a
 /// notification-style haptic feedback based on the specified feedback type.
 internal struct HapticTypeViewModifier: ViewModifier {
-
+    
     /// The type of notification feedback to trigger upon tap.
     let type: FBType
-
+    
     /// Modifies the provided content by adding a gesture recognizer that triggers
     /// the specified notification-style haptic feedback when the content is tapped.
     ///
@@ -224,10 +273,10 @@ internal struct HapticTypeViewModifier: ViewModifier {
 /// This modifier listens for a tap gesture on the view it modifies and triggers an
 /// impact-style haptic feedback based on the specified feedback style.
 internal struct HapticStyleViewModifier: ViewModifier {
-
+    
     /// The style of impact feedback to trigger upon tap.
     let type: FBStyle
-
+    
     /// Modifies the provided content by adding a gesture recognizer that triggers the
     /// specified impact-style haptic feedback when the content is tapped.
     ///
@@ -261,7 +310,7 @@ public func hapticAction(_ style: FBStyle) {
 // MARK: - View Extension
 
 extension View {
-
+    
     /// Applies a notification-style haptic feedback to the view upon a tap gesture.
     ///
     /// This method simplifies the application of notification-style haptic feedback to a view
@@ -275,7 +324,7 @@ extension View {
     public func haptic(_ type: FBType) -> some View {
         self.modifier(HapticTypeViewModifier(type: type))
     }
-
+    
     /// Applies an impact-style haptic feedback to the view upon a tap gesture.
     ///
     /// This method simplifies the application of impact-style haptic feedback to a view by

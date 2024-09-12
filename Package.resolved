@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/markbattistella/DefaultsKit",
       "state" : {
-        "revision" : "fa4809c496796ddfa669157c4f522f29951cb23e",
-        "version" : "1.1.0"
+        "revision" : "33f11ad72a7c499702a90adfbe07ca8570abb641",
+        "version" : "1.1.1"
       }
     },
     {

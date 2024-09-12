@@ -10,12 +10,19 @@ import Foundation
 /// 
 /// Conforming types provide information about haptic capabilities and user preferences.
 protocol HapticSettings {
+    
     /// Indicates whether the device supports haptic feedback.
     var isCapable: Bool { get }
-
+    
     /// Indicates whether haptic feedback is enabled by user settings.
     var isEnabled: Bool { get }
-
+    
     /// Indicates whether logging for haptic actions is enabled.
     var isLoggingEnabled: Bool { get }
+    
+    /// Indicates the threshold for logging haptic messages.
+    var loggingThreshold: Int { get }
+    
+    /// Indicates the cooldown period for logging haptic messages.
+    var loggingCooldown: TimeInterval { get }
 }
