@@ -96,6 +96,7 @@ internal final class HapticsManager {
             hapticLoggingCooldownKey: HapticUserDefaultKeys.hapticLogCooldown
         )
         self._appWideEnabled = settings.isEnabled
+        self.resetLogTrackingIfHapticsEnabled()
         observeUserDefaultsChanges()
     }
     
@@ -135,7 +136,6 @@ extension HapticsManager {
     private func updateAppWideEnabled() {
         settingsQueue.async(flags: .barrier) {
             self._appWideEnabled = self.settings.isEnabled
-            self.resetLogTrackingIfHapticsEnabled()
         }
     }
     
@@ -147,7 +147,6 @@ extension HapticsManager {
         settingsQueue.async(flags: .barrier) {
             self.settings = customSettings
             self._appWideEnabled = customSettings.isEnabled
-            self.resetLogTrackingIfHapticsEnabled()
         }
     }
 }
