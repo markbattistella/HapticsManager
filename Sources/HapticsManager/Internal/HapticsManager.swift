@@ -43,7 +43,6 @@ internal final class HapticsManager: Sendable {
     private let defaults = UserDefaults.standard
 
     /// A generator for producing notification-style haptic feedback.
-    @MainActor
     private let notificationFeedback = UINotificationFeedbackGenerator()
 
     /// A cache of `UIImpactFeedbackGenerator` instances, indexed by their feedback style.
@@ -156,11 +155,11 @@ extension HapticsManager {
     ///
     /// - Returns: `true` if logging is enabled and the build is in debug mode; otherwise, `false`.
     private func shouldLog() -> Bool {
-#if DEBUG
+        #if DEBUG
         return settings.isLoggingEnabled
-#else
+        #else
         return false
-#endif
+        #endif
     }
 
     /// Logs the initial status when the manager initializes.
