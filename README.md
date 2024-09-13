@@ -8,8 +8,9 @@
 - **SwiftUI View Modifiers:** Easily add haptic feedback to your SwiftUI views with built-in modifiers.
 - **UserDefaults Integration:** Automatically configures haptic settings like enabling/disabling feedback and logging based on user preferences.
 - **Device Capability Check:** Automatically detects and respects the device's haptic feedback capabilities.
-- **Thread-Safe Access:** Ensures thread-safe management of haptic settings using GCD.
-- **Built-In Logging:** Optional logging for debugging haptic feedback actions.
+- **Thread-Safe Access:** Ensures thread-safe management of haptic settings using Grand Central Dispatch (GCD).
+- **Built-In Configurable Logging:** Optional and configurable logging for debugging haptic feedback actions, with adjustable thresholds for log rate-limiting.
+- **Customizable Logging Modes:** Supports `smart` and `complete` logging modes with configurable thresholds for skip logs and log intervals.
 
 ## Installation
 
@@ -78,25 +79,15 @@ UserDefaults.standard.set(true, forKey: HapticUserDefaultKeys.hapticLoggingEnabl
 
 ### Customising Logging
 
-Logging can be enabled or disabled based on user preferences, controlling whether debug messages for haptic actions are printed:
+`HapticsManager` now supports configurable logging modes (`smart` and `complete`) with customisable thresholds for skip logs and logging intervals. Logging can be enabled or disabled based on user preferences:
 
 ```swift
 // Toggle logging preference
 UserDefaults.standard.set(true, forKey: HapticUserDefaultKeys.hapticLoggingEnabled.rawValue)
-```
 
-### Injecting Custom Settings
-
-For testing or advanced configurations, you can inject custom settings into `HapticsManager`:
-
-```swift
-import HapticsManager
-
-// Define a custom settings object conforming to HapticSettings protocol
-let mockSettings = MockHapticSettings(isEnabled: true, isLoggingEnabled: false)
-
-// Set the custom settings (internal use for testing)
-HapticsManager.shared.setCustomSettings(mockSettings)
+// Use different logging modes with custom thresholds
+let loggingMode = LoggingMode.smart(skipLogThreshold: 20, logThreshold: 60) // Customize thresholds
+HapticsManager.shared.logSettings(mode: loggingMode)
 ```
 
 ## Extending Haptic Feedback Types

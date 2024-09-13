@@ -5,7 +5,8 @@ import PackageDescription
 let package = Package(
     name: "HapticsManager",
     platforms: [
-        .iOS(.v15)
+        .iOS(.v15),
+        .macCatalyst(.v15)
     ],
     products: [
         .library(
@@ -21,7 +22,8 @@ let package = Package(
         .target(
             name: "HapticsManager",
             dependencies: ["DefaultsKit", "SimpleLogger"],
-            exclude: []
+            exclude: [],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         )
     ]
 )
