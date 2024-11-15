@@ -1,4 +1,14 @@
+<div align="center">
+
 # HapticsManager
+
+![Swift Versions](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fmarkbattistella%2FHapticsManager%2Fbadge%3Ftype%3Dswift-versions)
+
+![Platforms](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fmarkbattistella%2FHapticsManager%2Fbadge%3Ftype%3Dplatforms)
+
+![Licence](https://img.shields.io/badge/Licence-MIT-white?labelColor=blue&style=flat)
+
+</div>
 
 `HapticsManager` is a Swift package designed to manage haptic feedback within your iOS applications. It offers a centralised approach to handling both notification and impact-style haptic feedback, based on device capabilities and user preferences stored in `UserDefaults`. The package provides simple global functions and SwiftUI view modifiers for integrating haptics with minimal effort.
 
