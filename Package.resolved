@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/markbattistella/DefaultsKit",
       "state" : {
-        "revision" : "33f11ad72a7c499702a90adfbe07ca8570abb641",
-        "version" : "1.1.1"
+        "revision" : "587be81b56374b1f9219e8c6ab18b7bc585ec35c",
+        "version" : "2.0.0"
       }
     },
     {
@@ -15,7 +15,7 @@
       "location" : "https://github.com/markbattistella/SimpleLogger",
       "state" : {
         "revision" : "7068e5c77951e81870b5054e553f25d00aa273c1",
-        "version" : "1.0.1"
+        "version" : "1.1.0"
       }
     }
   ],
