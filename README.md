@@ -10,17 +10,14 @@
 
 </div>
 
-`HapticsManager` is a Swift package designed to manage haptic feedback within your iOS applications. It offers a centralised approach to handling both notification and impact-style haptic feedback, based on device capabilities and user preferences stored in `UserDefaults`. The package provides simple global functions and SwiftUI view modifiers for integrating haptics with minimal effort.
+`HapticsManager` is a Swift package that provides a modular and easy-to-use interface for implementing haptic feedback in iOS applications. It integrates seamlessly with both UIKit and SwiftUI, enabling you to enhance user experience through customisable tactile feedback.
 
 ## Features
 
-- **Global Access Functions:** Provides global functions for triggering haptic feedback, avoiding direct access to the singleton instance.
-- **SwiftUI View Modifiers:** Easily add haptic feedback to your SwiftUI views with built-in modifiers.
-- **UserDefaults Integration:** Automatically configures haptic settings like enabling/disabling feedback and logging based on user preferences.
-- **Device Capability Check:** Automatically detects and respects the device's haptic feedback capabilities.
-- **Thread-Safe Access:** Ensures thread-safe management of haptic settings using Grand Central Dispatch (GCD).
-- **Built-In Configurable Logging:** Optional and configurable logging for debugging haptic feedback actions, with adjustable thresholds for log rate-limiting.
-- **Customizable Logging Modes:** Supports `smart` and `complete` logging modes with configurable thresholds for skip logs and log intervals.
+- **Custom Haptics:** Easily define and trigger haptic feedback.
+- **SwiftUI Extensions:** Add haptic feedback to SwiftUI views in a declarative way.
+- **User Preferences:** Enable or disable haptic feedback based on user settings through simple configuration.
+- **Custom Haptic Patterns:** Extend and create your own complex haptic patterns.
 
 ## Installation
 
@@ -32,82 +29,209 @@ dependencies: [
 ]
 ```
 
+## Why use this
+
+This package works similarly to the SwiftUI `.sensoryFeedback` API but adds more flexibility by letting you configure whether haptics are enabled globally via `UserDefaults`.
+
+With `HapticsManager`, you can easily determine if haptic feedback should be available for the user — simplifying your workflow and maintaining familiar, declarative syntax.
+
+The main advantage is that you can control the `isHapticsEnabled` key centrally, allowing or conditionally enabling haptic feedback without rewriting logic in every trigger. `.sensoryFeedback` would require you to implement this logic each time it's used.
+
 ## Usage
 
-### Triggering Haptic Feedback with Global Functions
+There are three type of ways to use the `HapticsManager`:
 
-`HapticsManager` simplifies the use of haptic feedback by providing global functions. To trigger notification or impact feedback, use:
+- **Static Action:** 
+- **Static Action with Condition:** 
+- **Dynamic Action:** 
+
+### Static Action
+
+The static action format allows you to trigger haptic feedback consistently and simply. In the example below, haptic feedback is triggered whenever the `isSuccess` state changes.
 
 ```swift
-import HapticsManager
+@State private var isSuccess: Bool = false
 
-// Trigger notification feedback (e.g., success, warning, error)
-hapticAction(.success)
-
-// Trigger impact feedback (e.g., light, medium, heavy)
-hapticAction(.medium)
+Button("isSuccess: \(isSuccess)") {
+  isSuccess.toggle()
+}
+.hapticFeedback(.notification(.warning), trigger: isSuccess)
 ```
 
-### Adding Haptic Feedback to SwiftUI Views
+### Static Action with Condition
 
-Easily add haptic feedback to your SwiftUI views using the provided modifiers:
+You can also use a condition to control when the haptic feedback should be triggered, allowing for more focused control over when feedback occurs.
 
 ```swift
-import SwiftUI
-import HapticsManager
+enum Phase { case inactive, active, completed }
 
-struct ContentView: View {
-  var body: some View {
-    VStack {
-      Button("Tap for Success Haptic") {
-        // Haptic feedback is automatically triggered by the modifier
-      }
-      .haptic(.success)
+@State private var phase: Phase = .inactive
 
-      Button("Tap for Medium Impact Haptic") {
-        // Haptic feedback is automatically triggered by the modifier
-      }
-      .haptic(.medium) // Adds impact feedback
-    }
+Button("Update phase") {
+  switch phase {
+    case .inactive: phase = .active
+    case .active: phase = .completed
+    case .completed: phase = .inactive
+  }
+}
+.hapticFeedback(.impact(.medium), trigger: phase) { oldValue, newValue in
+  oldValue != .completed && newValue == .completed
+}
+```
+
+### Dynamic Action
+
+The dynamic action approach gives you full control over both the type of feedback and the conditions under which it's triggered.
+
+```swift
+enum LoadingState { case ready, success, failure }
+
+@State private var loadingState: LoadingState = .ready
+
+Button("Update loading state") {
+  switch loadingState {
+    case .ready: loadingState = .success
+    case .success: loadingState = .failure
+    case .failure: loadingState = .ready
+  }
+}
+.hapticFeedback(trigger: loadingState) { oldValue, newValue in
+  switch (oldValue, newValue) {
+    case (.failure, .ready):
+      return .notification(.warning)
+    case (.ready, .success):
+      return .notification(.success)
+    case (.success, .failure):
+      return .notification(.error)
+    default:
+      return nil
   }
 }
 ```
 
 ### Configuring Haptic Settings
 
-`HapticsManager` uses `UserDefaults` for storing haptic settings. The package provides default keys through the `HapticUserDefaultKeys` enum, which you can use to set preferences:
+`HapticsManager` includes a `.hapticEffectsEnabled` `UserDefaults` key, allowing you to dynamically enable or disable haptics based on user settings.
+
+This is helpful if you want to add a settings screen for toggling haptics, or if you need an overall logic to control haptics — for example, making it a premium feature.
+
+#### Built-in UserDefaults Suite
+
+The package uses an internal, publicly exposed `UserDefaults` suite for storing haptic-related settings:
 
 ```swift
-import HapticsManager
+@main
+struct MyAwesomeApp: App {
 
-// Enable haptic effects
-UserDefaults.standard.set(true, forKey: HapticUserDefaultKeys.hapticEffectsEnabled.rawValue)
+  init() {
+    UserDefaults.haptic.register([
+      HapticUserDefaultsKey.hapticEffectsEnabled : true
+    ])
+  }
 
-// Enable logging
-UserDefaults.standard.set(true, forKey: HapticUserDefaultKeys.hapticLoggingEnabled.rawValue)
+  var body: some Scene {
+    WindowGroup { ... }
+  }
+}
 ```
 
-### Customising Logging
-
-`HapticsManager` now supports configurable logging modes (`smart` and `complete`) with customisable thresholds for skip logs and logging intervals. Logging can be enabled or disabled based on user preferences:
+Or manually updating it:
 
 ```swift
-// Toggle logging preference
-UserDefaults.standard.set(true, forKey: HapticUserDefaultKeys.hapticLoggingEnabled.rawValue)
+Button("Turn haptics off") {
+  UserDefaults.haptics.set(false, for: HapticUserDefaultKeys.isHapticEnabled)
+}
 
-// Use different logging modes with custom thresholds
-let loggingMode = LoggingMode.smart(skipLogThreshold: 20, logThreshold: 60) // Customize thresholds
-HapticsManager.shared.logSettings(mode: loggingMode)
+Button("Turn haptics on") {
+  UserDefaults.haptics.set(true, for: HapticUserDefaultKeys.isHapticEnabled)
+}
 ```
+
+> [!IMPORTANT]  
+> Although you can register `UserDefaults` to any suite (`.standard` or custom), the package will only respond to the internal `.haptic` suite to prevent unintended clashes across different parts of the application.
 
 ## Extending Haptic Feedback Types
 
-To add more haptic feedback types, extend the `UINotificationFeedbackGenerator.FeedbackType` or `UIImpactFeedbackGenerator.FeedbackStyle` if custom handling is required.
+If the built-in feedback types are not sufficient, you can create custom haptic patterns using the `.custom(CustomHaptic)` `Feedback` case.
+
+### Creating a Custom Feedback
+
+To add a custom haptic feedback type:
+
+1. Define a `CustomHaptic` conforming enum:
+
+```swift
+enum MyCustomHapticPattern: CustomHaptic {
+  case complexSuccess
+
+  func play() {
+    switch self {
+      case .complexSuccess:
+        playComplexSuccessHaptic()
+    }
+  }
+}
+```
+
+2. Implement the `play()` function to define your custom haptic feedback:
+
+```swift
+extension MyCustomHapticPattern {
+
+  // From HWS: https://www.hackingwithswift.com/books/ios-swiftui/adding-haptic-effects
+  func playComplexSuccessHaptic() {
+    var events = [CHHapticEvent]()
+
+    for i in stride(from: 0, to: 1, by: 0.1) {
+      let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(i))
+      let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(i))
+      let event = CHHapticEvent(
+        eventType: .hapticTransient, 
+        parameters: [intensity, sharpness], 
+        relativeTime: i
+      )
+      events.append(event)
+    }
+
+    for i in stride(from: 0, to: 1, by: 0.1) {
+      let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(1 - i))
+      let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(1 - i))
+      let event = CHHapticEvent(
+        eventType: .hapticTransient, 
+        parameters: [intensity, sharpness], 
+        relativeTime: 1 + i
+      )
+      events.append(event)
+    }
+
+    do {
+      let pattern = try CHHapticPattern(events: events, parameters: [])
+      let engine = try CHHapticEngine()
+      try engine.start()
+      let player = try engine.makePlayer(with: pattern)
+      try player.start(atTime: 0)
+    } catch {
+      print("Failed to play pattern: \(error.localizedDescription).")
+    }
+  }
+}
+```
+
+3. Use the custom feedback in your app:
+
+```swift
+@State private var isSuccess: Bool = false
+
+Button("isSuccess: \(isSuccess)") {
+  isSuccess.toggle()
+}
+.hapticFeedback(.custom(.complexSuccess), trigger: isSuccess)
+```
 
 ## Contributing
 
-Contributions are welcome! Please submit a pull request or open an issue if you have suggestions or improvements.
+Contributions are always welcome! Feel free to submit a pull request or open an issue for any suggestions or improvements you have.
 
 ## License
 
-`HapticsManager` is licensed under the MIT License. See the LICENSE file for more details.
+`HapticsManager` is licensed under the MIT License. See the LICENCE file for more details.

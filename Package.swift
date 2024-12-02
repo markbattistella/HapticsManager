@@ -1,12 +1,11 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 
 import PackageDescription
 
 let package = Package(
     name: "HapticsManager",
     platforms: [
-        .iOS(.v15),
-        .macCatalyst(.v15),
+        .iOS(.v14)
     ],
     products: [
         .library(
@@ -16,14 +15,13 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/markbattistella/DefaultsKit", from: "2.0.0"),
-        .package(url: "https://github.com/markbattistella/SimpleLogger", from: "1.0.0"),
+        .package(url: "https://github.com/markbattistella/TriggerKit", from: "1.0.0"),
     ],
     targets: [
         .target(
             name: "HapticsManager",
-            dependencies: ["DefaultsKit", "SimpleLogger"],
-            exclude: [],
-            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+            dependencies: ["DefaultsKit", "TriggerKit"],
+            exclude: []
         )
     ]
 )
