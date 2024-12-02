@@ -42,9 +42,9 @@ The main advantage is that you can control the `isHapticsEnabled` key centrally,
 
 There are three type of ways to use the `HapticsManager`:
 
-- **Static Action:** 
-- **Static Action with Condition:** 
-- **Dynamic Action:** 
+- **Static Action:** This is the simplest method, used when you want to trigger haptic feedback for a particular state change. It's consistent and straightforward — ideal when the haptic feedback needs to occur every time a specific condition (like a state variable changing) is met.
+- **Static Action with Condition:** This approach adds more control compared to the standard static action. Here, you specify a set of conditions to determine when the haptic feedback should be triggered. This allows you to handle more nuanced scenarios — such as only playing feedback when transitioning from one specific state to another, while ignoring others.
+- **Dynamic Action:** The most flexible of the three, dynamic actions let you determine the type of haptic feedback based on the old and new values during a state change. This means you can implement complex feedback behaviours that respond differently based on how the state transitions, allowing for a more dynamic and tailored user experience.
 
 ### Static Action
 
