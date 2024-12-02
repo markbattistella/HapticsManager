@@ -1,4 +1,5 @@
 {
+  "originHash" : "03d57af460d9898d32137959b8d20f50b6754ecb3d57770342e529370ee54ac8",
   "pins" : [
     {
       "identity" : "defaultskit",
@@ -10,14 +11,14 @@
       }
     },
     {
-      "identity" : "simplelogger",
+      "identity" : "triggerkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/markbattistella/SimpleLogger",
+      "location" : "https://github.com/markbattistella/TriggerKit",
       "state" : {
-        "revision" : "7068e5c77951e81870b5054e553f25d00aa273c1",
-        "version" : "1.1.0"
+        "revision" : "dbc86802d81a02ee338545e6452ba6fd631c0f59",
+        "version" : "1.0.0"
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
