@@ -11,7 +11,7 @@
 
 </div>
 
-`HapticsManager` is a Swift package that provides a modular and easy-to-use interface for implementing haptic feedback in iOS applications. It integrates seamlessly with both UIKit and SwiftUI, enabling you to enhance user experience through customisable tactile feedback.
+`HapticsManager` is a Swift package that provides a modular and easy-to-use interface for implementing haptic feedback in your applications. It integrates seamlessly with SwiftUI, enabling you to enhance user experience through customisable tactile feedback.
 
 ## Features
 
