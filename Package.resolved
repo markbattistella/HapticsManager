@@ -1,5 +1,5 @@
 {
-  "originHash" : "03d57af460d9898d32137959b8d20f50b6754ecb3d57770342e529370ee54ac8",
+  "originHash" : "907ecdd6fff34e90909e1f1eb5a5f98c5fd18af34fa4112a72c28e8f03d4621c",
   "pins" : [
     {
       "identity" : "defaultskit",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/markbattistella/TriggerKit",
       "state" : {
-        "revision" : "dbc86802d81a02ee338545e6452ba6fd631c0f59",
-        "version" : "1.0.0"
+        "revision" : "5b30ef85f7903610cec6aba9cdbf91732e04f3e2",
+        "version" : "1.0.1"
       }
     }
   ],
