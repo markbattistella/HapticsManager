@@ -16,6 +16,6 @@ public enum HapticUserDefaultsKey: String, UserDefaultsKeyRepresentable {
 
     /// Default suite name to group all package keys.
     public static var suiteName: String? {
-        "com.markbattistella.packages.hapticsManager.default."
+        "com.markbattistella.packages.hapticsManager"
     }
 }
