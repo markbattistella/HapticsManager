@@ -7,12 +7,15 @@
 import DefaultsKit
 import Foundation
 
-/// Represents the keys used for managing haptic feedback preferences in `UserDefaults`.
-///
-/// This enum defines all the keys that are related to storing and retrieving haptic feedback
-/// settings from `UserDefaults`, ensuring a centralized and type-safe approach.
+/// An enumeration representing keys for storing haptic-related settings in `UserDefaults`.
+/// Each case corresponds to a specific setting that can be stored and retrieved.
 public enum HapticUserDefaultsKey: String, UserDefaultsKeyRepresentable {
 
     /// The key used to determine whether haptic effects are enabled.
     case hapticEffectsEnabled
+
+    /// Default suite name to group all package keys.
+    public static var suiteName: String? {
+        "com.markbattistella.packages.hapticsManager.default."
+    }
 }

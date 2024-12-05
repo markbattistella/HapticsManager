@@ -8,17 +8,18 @@ import Foundation
 
 extension UserDefaults {
 
-    /// A `UserDefaults` instance scoped to the app group for managing haptic feedback settings.
+    /// A `UserDefaults` instance specifically used for managing haptic-related settings.
     ///
-    /// This property provides access to a `UserDefaults` instance that is shared across the
-    /// app group identified by `com.markbattistella.hapticsManager`. If the app group
-    /// cannot be accessed, it defaults to the standard `UserDefaults`.
+    /// This instance is created using an app group identifier to allow shared access between app
+    /// extensions. If the app group cannot be found, the standard `UserDefaults` instance is used
+    /// as a fallback.
     ///
-    /// - Note: Use this instance to store and retrieve haptic-related settings in a shared
-    ///   context, such as across extensions or multiple apps in the same group.
+    /// - Note: The app group identifier must be correctly configured for this to work. This allows
+    /// for storing shared settings that can be accessed across different parts of the app, such
+    /// as extensions or widgets.
     nonisolated(unsafe)
         public static let haptics: UserDefaults = {
-            let appGroupIdentifier = "com.markbattistella.hapticsManager"
+            let appGroupIdentifier = HapticUserDefaultsKey.suiteName
             guard let userDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
 
                 // Fallback to the standard UserDefaults if the app group is unavailable.
