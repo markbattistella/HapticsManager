@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 5.10
 
 import PackageDescription
 
@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/markbattistella/DefaultsKit", from: "2.0.0"),
+        .package(url: "https://github.com/markbattistella/DefaultsKit", from: "25.0.0"),
         .package(url: "https://github.com/markbattistella/TriggerKit", from: "1.0.0"),
     ],
     targets: [

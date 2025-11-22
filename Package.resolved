@@ -1,13 +1,13 @@
 {
-  "originHash" : "907ecdd6fff34e90909e1f1eb5a5f98c5fd18af34fa4112a72c28e8f03d4621c",
+  "originHash" : "a6ef6fd996cd318ffb06e7a77ca7eee312e99ff06bb562173754e1444a2e6bd5",
   "pins" : [
     {
       "identity" : "defaultskit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/markbattistella/DefaultsKit",
       "state" : {
-        "revision" : "593e7cfadd857bf5829d4988437e16876ee116ea",
-        "version" : "2.2.1"
+        "revision" : "2f1fcadbe18926185b022397336c61979d8794ac",
+        "version" : "25.11.22"
       }
     },
     {
