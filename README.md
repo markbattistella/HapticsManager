@@ -317,6 +317,9 @@ enum MyCustomHapticPattern: CustomHaptic {
 
 2. Implement the `play()` function to define your custom haptic feedback:
 
+> [!NOTE]
+> When creating custom haptic patterns, you do not need to create or manage a `CHHapticEngine` yourself. `CustomHaptic` provides a shared engine through `hapticEngine`, powered internally by `HapticEngineManager`, ensuring the engine is created once and kept alive for the lifetime of the app.
+
 ```swift
 extension MyCustomHapticPattern {
 
@@ -348,10 +351,10 @@ extension MyCustomHapticPattern {
 
     do {
       let pattern = try CHHapticPattern(events: events, parameters: [])
-      let engine = try CHHapticEngine()
-      try engine.start()
-      let player = try engine.makePlayer(with: pattern)
-      try player.start(atTime: 0)
+
+      // Play using the shared haptic engine
+      playPattern(pattern)
+
     } catch {
       print("Failed to play pattern: \(error.localizedDescription).")
     }
@@ -368,6 +371,22 @@ Button("isSuccess: \(isSuccess)") {
   isSuccess.toggle()
 }
 .hapticFeedback(.custom(.complexSuccess), trigger: isSuccess)
+```
+
+### Using your own engine configuration
+
+Within the `CHHapticPattern` you can use the same engine from `HapticsManager` but you can configure your own settings:
+
+```swift
+...
+do {
+  let pattern = try CHHapticPattern(events: events, parameters: [])
+
+  let engine = try hapticEngine
+  let player = try engine.makePlayer(with: pattern)
+  try player.start(atTime: 10)
+} catch {
+...
 ```
 
 ## Contributing
