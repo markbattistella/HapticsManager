@@ -203,3 +203,85 @@ extension View {
         )
     }
 }
+
+// MARK: - Immediate Action
+
+extension View {
+
+    /// Performs the specified haptic feedback immediately.
+    ///
+    /// Use this method to trigger a haptic response directly from an event handler, such as
+    /// inside a button action, gesture, or asynchronous callback. The feedback is executed
+    /// imperatively and does not depend on view state or view lifecycle updates.
+    ///
+    /// This method is the most reliable option for controls such as ``Button`` or views
+    /// contained within ``Form`` or ``List``, where SwiftUI may not always propagate tap
+    /// gestures to modifiers.
+    ///
+    /// ```swift
+    /// Button("Submit") {
+    ///     inlineHaptic(.notification(.success))
+    ///     submitForm()
+    /// }
+    /// ```
+    ///
+    /// - Parameter feedback: The haptic feedback to perform.
+    public func inlineHaptic(
+        _ feedback: HapticFeedbackPerformer<UUID>.Feedback
+    ) {
+        HapticFeedbackPerformer<UUID>.perform(feedback)
+    }
+}
+
+extension View {
+
+    /// Attaches haptic feedback to a view, triggered when the user taps it.
+    ///
+    /// This method applies a modifier that listens for tap gestures on the view and performs
+    /// the supplied haptic feedback when tapped. Unlike ``inlineHaptic(_:)``, this approach
+    /// does not require manual calls within an action handler and is suitable for views such
+    /// as text, shapes, and images.
+    ///
+    /// When applied to a ``Button``, this modifier uses a simultaneous gesture so the button’s
+    /// built-in tap behaviour continues to function. However, in some complex view
+    /// hierarchies—such as ``Form`` or ``List``—gesture delivery is not guaranteed. In these
+    /// cases, ``inlineHaptic(_:)`` is recommended for consistent behaviour.
+    ///
+    /// ```swift
+    /// Text("Tap Me")
+    ///     .padding()
+    ///     .hapticFeedback(.impact(.medium))
+    /// ```
+    ///
+    /// - Parameter feedback: The haptic feedback to perform when the user taps the view.
+    /// - Returns: A modified view that triggers the specified feedback on tap.
+    public func hapticFeedback(
+        _ feedback: HapticFeedbackPerformer<UUID>.Feedback
+    ) -> some View {
+        modifier(
+            ImmediateHapticModifier(feedback: feedback)
+        )
+    }
+}
+
+private struct ImmediateHapticModifier: ViewModifier {
+
+    let feedback: HapticFeedbackPerformer<UUID>.Feedback
+
+    /// Applies a tap-driven haptic feedback trigger to the modified view.
+    ///
+    /// This modifier listens for tap gestures using a simultaneous gesture, ensuring that
+    /// existing interactions—such as button taps—continue to function normally. When the user
+    /// taps the view, the supplied haptic feedback is executed.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The view configured to trigger haptic feedback on tap.
+    func body(content: Content) -> some View {
+        content
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    HapticFeedbackPerformer<UUID>.perform(feedback)
+                }
+            )
+    }
+}

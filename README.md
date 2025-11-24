@@ -182,6 +182,75 @@ Button("Toggle Loading") {
 }
 ```
 
+### Immediate Haptic Feedback
+
+In addition to the state-driven haptic APIs, `HapticsManager` offers Immediate Action APIs designed to trigger haptic feedback directly from user interaction.
+
+These are ideal when you want haptics to fire each time the user taps a view, or when you want full control inside a Button action.
+
+There are two forms:
+
+1. Declarative Tap-Driven Haptic Feedback: `.hapticFeedback(_:)`
+2. Imperative Haptic Trigger: `.inlineHaptic(_:)`
+
+Each serves a different role.
+
+#### Declarative Immediate Action (tap-triggered)
+
+Attach haptic feedback to any tappable view.
+
+The haptic is triggered when the user taps the view, not when state changes or when the view re-renders.
+
+```swift
+Text("Tap Me")
+    .padding()
+    .hapticFeedback(.impact(.medium))
+```
+
+This is useful for:
+
+- Text, Image, Shape
+- Custom tappable areas
+- Views where you want to provide tactile response on tap
+
+> [!NOTE]
+> In certain contexts—such as Form, List, toolbar items, or heavily styled buttons—SwiftUI’s internal gesture system may interfere with tap delivery. In those cases, use `inlineHaptic(_:)` instead.
+
+#### Imperative Immediate Action (`inlineHaptic`)
+
+Use this method to trigger a haptic directly inside your action handler.
+
+```swift
+Button("Submit") {
+    inlineHaptic(.notification(.success))
+    submitForm()
+}
+```
+
+This approach is:
+
+- The most reliable for Buttons
+- Guaranteed to fire exactly when called
+- Not dependent on SwiftUI gesture routing
+- Safe inside async tasks, callbacks, gesture recognisers, etc.
+
+This mirrors UIKit’s pattern:
+
+```swift
+UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+```
+
+##### Recommended usage
+
+Use `inlineHaptic(_:)` instead of `.hapticFeedback(_:)` when:
+
+- Inside a Button
+- Inside Form
+- Inside List
+- Inside toolbar actions
+- When the action may be triggered programmatically
+- When you want exactly one haptic per action execution
+
 ### Configuring Haptic Settings
 
 `HapticsManager` includes a `.hapticEffectsEnabled` `UserDefaults` key, allowing you to dynamically enable or disable haptics based on user settings.

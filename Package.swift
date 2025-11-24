@@ -20,8 +20,7 @@ let package = Package(
     targets: [
         .target(
             name: "HapticsManager",
-            dependencies: ["DefaultsKit", "TriggerKit"],
-            exclude: []
+            dependencies: ["DefaultsKit", "TriggerKit"]
         )
     ]
 )
