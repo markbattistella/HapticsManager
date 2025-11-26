@@ -208,33 +208,6 @@ extension View {
 
 extension View {
 
-    /// Performs the specified haptic feedback immediately.
-    ///
-    /// Use this method to trigger a haptic response directly from an event handler, such as
-    /// inside a button action, gesture, or asynchronous callback. The feedback is executed
-    /// imperatively and does not depend on view state or view lifecycle updates.
-    ///
-    /// This method is the most reliable option for controls such as ``Button`` or views
-    /// contained within ``Form`` or ``List``, where SwiftUI may not always propagate tap
-    /// gestures to modifiers.
-    ///
-    /// ```swift
-    /// Button("Submit") {
-    ///     inlineHaptic(.notification(.success))
-    ///     submitForm()
-    /// }
-    /// ```
-    ///
-    /// - Parameter feedback: The haptic feedback to perform.
-    public func inlineHaptic(
-        _ feedback: HapticFeedbackPerformer<UUID>.Feedback
-    ) {
-        HapticFeedbackPerformer<UUID>.perform(feedback)
-    }
-}
-
-extension View {
-
     /// Attaches haptic feedback to a view, triggered when the user taps it.
     ///
     /// This method applies a modifier that listens for tap gestures on the view and performs
@@ -284,4 +257,29 @@ private struct ImmediateHapticModifier: ViewModifier {
                 }
             )
     }
+}
+
+// MARK: - Global
+
+/// Performs the specified haptic feedback immediately.
+///
+/// Use this method to trigger a haptic response directly from an event handler, such as
+/// inside a button action, gesture, or asynchronous callback. The feedback is executed
+/// imperatively and does not depend on view state or view lifecycle updates.
+///
+/// This method is the most reliable option for controls such as ``Button`` or views
+/// contained within ``Form`` or ``List``, where SwiftUI may not always propagate tap
+/// gestures to modifiers.
+///
+/// ```swift
+/// Button("Submit") {
+///     inlineHaptic(.notification(.success))
+///     submitForm()
+/// }
+/// ```
+///
+/// - Parameter feedback: The haptic feedback to perform.
+@inline(__always)
+public func inlineHaptic(_ feedback: HapticFeedbackPerformer<UUID>.Feedback) {
+    HapticFeedbackPerformer<UUID>.perform(feedback)
 }
