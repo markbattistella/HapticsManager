@@ -14,8 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/markbattistella/DefaultsKit", from: "25.0.0"),
-        .package(url: "https://github.com/markbattistella/TriggerKit", from: "1.0.0"),
+        .package(url: "https://github.com/markbattistella/DefaultsKit", from: "26.0.0"),
+        .package(url: "https://github.com/markbattistella/TriggerKit", from: "26.0.0"),
     ],
     targets: [
         .target(
