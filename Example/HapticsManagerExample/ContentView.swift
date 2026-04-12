@@ -6,6 +6,7 @@
 
 import SwiftUI
 import HapticsManager
+import HapticsManagerPresets
 
 struct ContentView: View {
     var body: some View {
@@ -29,6 +30,10 @@ struct ContentView: View {
 
                 NavigationLink("Imperative fireHaptic()") {
                     FireHapticDemo()
+                }
+
+                NavigationLink("Preset Library") {
+                    PresetLibraryDemo()
                 }
             }
             .navigationTitle("HapticsManager Demo")
@@ -175,9 +180,21 @@ fileprivate struct FireHapticDemo: View {
     }
 }
 
+fileprivate struct PresetLibraryDemo: View {
+    var body: some View {
+        List(HapticPreset.allCases, id: \.self) { preset in
+            Button(preset.displayName) {
+                inlineHaptic(.custom(preset))
+            }
+        }
+        .navigationTitle("Preset Library")
+    }
+}
+
 fileprivate enum DemoCustomHaptic: CustomHaptic {
     case complex
 
+    @MainActor
     func play() {
         var events = [CHHapticEvent]()
 
@@ -209,5 +226,17 @@ fileprivate enum DemoCustomHaptic: CustomHaptic {
         } catch {
             print("Failed to play pattern: \(error.localizedDescription).")
         }
+    }
+}
+
+fileprivate extension HapticPreset {
+    var displayName: String {
+        rawValue
+            .replacingOccurrences(
+                of: "([a-z0-9])([A-Z])",
+                with: "$1 $2",
+                options: .regularExpression
+            )
+            .localizedCapitalized
     }
 }

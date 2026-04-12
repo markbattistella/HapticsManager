@@ -11,6 +11,10 @@ let package = Package(
         .library(
             name: "HapticsManager",
             targets: ["HapticsManager"]
+        ),
+        .library(
+            name: "HapticsManagerPresets",
+            targets: ["HapticsManagerPresets"]
         )
     ],
     dependencies: [
@@ -21,6 +25,10 @@ let package = Package(
         .target(
             name: "HapticsManager",
             dependencies: ["DefaultsKit", "TriggerKit"]
+        ),
+        .target(
+            name: "HapticsManagerPresets",
+            dependencies: ["HapticsManager"]
         )
     ]
 )

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A3D6B6412ED50A6300C16DEF /* HapticsManager in Frameworks */ = {isa = PBXBuildFile; productRef = A3D6B6402ED50A6300C16DEF /* HapticsManager */; };
+		F3A6165F2FF0D600005EDC31 /* HapticsManagerPresets in Frameworks */ = {isa = PBXBuildFile; productRef = F3A6165E2FF0D600005EDC31 /* HapticsManagerPresets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A3D6B6412ED50A6300C16DEF /* HapticsManager in Frameworks */,
+				F3A6165F2FF0D600005EDC31 /* HapticsManagerPresets in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,6 +81,7 @@
 			name = HapticsManagerExample;
 			packageProductDependencies = (
 				A3D6B6402ED50A6300C16DEF /* HapticsManager */,
+				F3A6165E2FF0D600005EDC31 /* HapticsManagerPresets */,
 			);
 			productName = HapticsManagerExample;
 			productReference = A3D6B62B2ED50A1D00C16DEF /* HapticsManagerExample.app */;
@@ -351,6 +354,10 @@
 		A3D6B6402ED50A6300C16DEF /* HapticsManager */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = HapticsManager;
+		};
+		F3A6165E2FF0D600005EDC31 /* HapticsManagerPresets */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HapticsManagerPresets;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

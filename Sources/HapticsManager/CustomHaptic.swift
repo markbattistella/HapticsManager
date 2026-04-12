@@ -24,6 +24,7 @@ public protocol CustomHaptic {
     ///
     /// For advanced behaviour—such as multiple players, delayed start times, or dynamic
     /// parameter curves—access `hapticEngine` directly.
+    @MainActor
     func play()
 }
 
@@ -63,14 +64,12 @@ extension CustomHaptic {
     /// - Parameter pattern: The `CHHapticPattern` to play.
     @MainActor
     public func playPattern(_ pattern: CHHapticPattern) {
-        Task {
-            do {
-                let engine = try hapticEngine
-                let player = try engine.makePlayer(with: pattern)
-                try player.start(atTime: 0)
-            } catch {
-                print("Haptic pattern failed: \(error.localizedDescription)")
-            }
+        do {
+            let engine = try hapticEngine
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: 0)
+        } catch {
+            print("Haptic pattern failed: \(error.localizedDescription)")
         }
     }
 }

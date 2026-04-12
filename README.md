@@ -30,6 +30,26 @@ dependencies: [
 ]
 ```
 
+The package ships two targets:
+
+| Target | Description |
+| --- | --- |
+| `HapticsManager` | Core haptic engine, SwiftUI modifiers, and the `CustomHaptic` protocol |
+| `HapticsManagerPresets` | Optional add-on — 151 ready-to-use `CoreHaptics` patterns |
+
+Add only what you need to your target's dependencies:
+
+```swift
+.target(
+    name: "MyApp",
+    dependencies: [
+        .product(name: "HapticsManager", package: "HapticsManager"),
+        // Add this only if you want the built-in preset library:
+        .product(name: "HapticsManagerPresets", package: "HapticsManager"),
+    ]
+)
+```
+
 ## Why use this
 
 This package works similarly to the SwiftUI `.sensoryFeedback` API but adds more flexibility by letting you configure whether haptics are enabled globally via `UserDefaults`.
@@ -315,7 +335,7 @@ enum MyCustomHapticPattern: CustomHaptic {
 }
 ```
 
-2. Implement the `play()` function to define your custom haptic feedback:
+1. Implement the `play()` function to define your custom haptic feedback:
 
 > [!NOTE]
 > When creating custom haptic patterns, you do not need to create or manage a `CHHapticEngine` yourself. `CustomHaptic` provides a shared engine through `hapticEngine`, powered internally by `HapticEngineManager`, ensuring the engine is created once and kept alive for the lifetime of the app.
@@ -362,7 +382,7 @@ extension MyCustomHapticPattern {
 }
 ```
 
-3. Use the custom feedback in your app:
+1. Use the custom feedback in your app:
 
 ```swift
 @State private var isSuccess: Bool = false
@@ -388,6 +408,93 @@ do {
 } catch {
 ...
 ```
+
+## Built-in Preset Library
+
+The optional `HapticsManagerPresets` target ships 151 named haptic patterns sourced from the [Pulsar](https://github.com/software-mansion/pulsar) open-source library (MIT licence).
+
+Each preset uses `CoreHaptics` directly, combining discrete transient events (sharp taps) with continuous events shaped by intensity and sharpness parameter curves. 106 of the 151 presets use both layers; the remaining 45 are purely transient — all expression comes from the timing and sharpness of individual taps.
+
+### Usage
+
+Import the target and pass any `HapticPreset` case to `.custom(...)`:
+
+```swift
+import HapticsManager
+import HapticsManagerPresets
+
+// State-driven
+Button("Send") { isSent = true }
+    .hapticFeedback(.custom(HapticPreset.heartbeat), trigger: isSent)
+
+// Tap-driven
+Text("Tap me")
+    .hapticFeedback(.custom(HapticPreset.buzz))
+
+// Inline (inside a Button action or callback)
+Button("Submit") {
+    inlineHaptic(.custom(HapticPreset.fanfare))
+    submitForm()
+}
+```
+
+You can also call `.play()` directly when you need full control over timing:
+
+```swift
+HapticPreset.heartbeat.play()
+```
+
+### Available presets
+
+<details>
+<summary>Show all 151 presets</summary>
+
+| | | | |
+| --- | --- | --- | --- |
+| `afterglow` | `aftershock` | `alarm` | `anvil` |
+| `applause` | `ascent` | `balloonPop` | `barrage` |
+| `bassDrop` | `batter` | `bellToll` | `blip` |
+| `bloom` | `bongo` | `boulder` | `breakingWave` |
+| `breath` | `buildup` | `burst` | `buzz` |
+| `cadence` | `cameraShutter` | `canter` | `cascade` |
+| `castanets` | `catPaw` | `charge` | `chime` |
+| `chip` | `chirp` | `clamor` | `clasp` |
+| `cleave` | `coil` | `coinDrop` | `combinationLock` |
+| `crescendo` | `dewdrop` | `dirge` | `dissolve` |
+| `dogBark` | `drone` | `engineRev` | `exhale` |
+| `explosion` | `fadeOut` | `fanfare` | `feather` |
+| `finale` | `fingerDrum` | `firecracker` | `fizz` |
+| `flare` | `flick` | `flinch` | `flourish` |
+| `flurry` | `flush` | `gallop` | `gavel` |
+| `glitch` | `guitarStrum` | `hail` | `hammer` |
+| `heartbeat` | `herald` | `hoofBeat` | `ignition` |
+| `impact` | `jolt` | `keyboardMechanical` | `keyboardMembrane` |
+| `knell` | `knock` | `lament` | `latch` |
+| `lighthouse` | `lilt` | `lock` | `lope` |
+| `march` | `metronome` | `murmur` | `nudge` |
+| `passingCar` | `patter` | `peal` | `peck` |
+| `pendulum` | `ping` | `pip` | `piston` |
+| `plink` | `plummet` | `plunk` | `poke` |
+| `pound` | `powerDown` | `propel` | `pulse` |
+| `pummel` | `push` | `radar` | `rain` |
+| `ramp` | `rap` | `ratchet` | `rebound` |
+| `ripple` | `rivet` | `rustle` | `shockwave` |
+| `snap` | `sonar` | `spark` | `spin` |
+| `stagger` | `stamp` | `stampede` | `stomp` |
+| `stoneSkip` | `strike` | `summon` | `surge` |
+| `sway` | `sweep` | `swell` | `syncopate` |
+| `throb` | `thud` | `thump` | `thunder` |
+| `thunderRoll` | `tickTock` | `tidalSurge` | `tideSwell` |
+| `tremor` | `trigger` | `triumph` | `trumpet` |
+| `typewriter` | `unfurl` | `vortex` | `wane` |
+| `warDrum` | `waterfall` | `wave` | `wisp` |
+| `wobble` | `woodpecker` | `zipper` | |
+
+</details>
+
+### Attribution
+
+The preset data is derived from [Pulsar](https://github.com/software-mansion/pulsar) by Krzysztof Piaskowy / Software Mansion, and is used under the MIT Licence. The full licence text is included in the `ACKNOWLEDGEMENTS` file.
 
 ## Contributing
 

@@ -71,7 +71,9 @@ extension HapticFeedbackPerformer: TriggerActionPerformable {
                     generator.notificationOccurred(feedbackType)
                 }
             case .custom(let customHaptic):
-                customHaptic.play()
+                Task { @MainActor in
+                    customHaptic.play()
+                }
         }
     }
 }
