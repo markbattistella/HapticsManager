@@ -15,65 +15,100 @@ import Foundation
 ///
 /// The engine is lazily instantiated and automatically started when required. Use this type when
 /// implementing custom haptic patterns that rely on Core Haptics.
+@MainActor
 public final class HapticEngineManager {
 
-    /// The shared engine manager instance.
-    ///
-    /// Use `HapticEngineManager.shared` to access the package-managed `CHHapticEngine`. This
-    /// ensures consistent lifecycle management and prevents accidental deallocation of the
-    /// engine.
-    public static let shared = HapticEngineManager()
+  /// The shared engine manager instance.
+  ///
+  /// Use `HapticEngineManager.shared` to access the package-managed `CHHapticEngine`. This
+  /// ensures consistent lifecycle management and prevents accidental deallocation of the
+  /// engine.
+  public static let shared = HapticEngineManager()
 
-    /// The underlying `CHHapticEngine` instance.
-    ///
-    /// This value is created lazily on the first call to `getEngine()`. It remains alive for the
-    /// lifetime of the process unless explicitly reset.
-    private var engine: CHHapticEngine?
+  /// The underlying `CHHapticEngine` instance.
+  ///
+  /// This value is created lazily on the first call to `getEngine()`. It remains alive for the
+  /// lifetime of the process unless explicitly reset.
+  private var engine: CHHapticEngine?
 
-    /// Creates a new engine manager.
-    ///
-    /// The initializer is private to enforce the use of the shared instance.
-    private init() {}
+  /// Tracks whether the shared engine is expected to be running.
+  private var isEngineRunning = false
 
-    /// Returns the shared `CHHapticEngine` instance, creating it if necessary.
-    ///
-    /// If the engine has already been created, this method returns the existing instance.
-    /// Otherwise, it creates a new engine, stores it, and returns it.
-    ///
-    /// This method does not start the engine. Call `startEngineIfNeeded()` to ensure the
-    /// engine is running before use.
-    ///
-    /// - Returns: A valid `CHHapticEngine` instance.
-    /// - Throws: Any error thrown during engine creation.
-    @MainActor
-    public func getEngine() throws -> CHHapticEngine {
-        if let engine = engine {
-            return engine
-        }
+  /// Creates a new engine manager.
+  ///
+  /// The initializer is private to enforce the use of the shared instance.
+  private init() {}
 
-        let newEngine = try CHHapticEngine()
-        engine = newEngine
-        return newEngine
+  /// Returns the shared `CHHapticEngine` instance, creating it if necessary.
+  ///
+  /// If the engine has already been created, this method returns the existing instance.
+  /// Otherwise, it creates a new engine, stores it, and returns it.
+  ///
+  /// This method does not start the engine. Call `startEngineIfNeeded()` to ensure the
+  /// engine is running before use.
+  ///
+  /// - Returns: A valid `CHHapticEngine` instance.
+  /// - Throws: Any error thrown during engine creation.
+  public func getEngine() throws -> CHHapticEngine {
+    if let engine = engine {
+      return engine
     }
 
-    /// Starts the shared engine if it is not already running.
-    ///
-    /// This method guarantees that the engine is ready to play haptic patterns. If the engine
-    /// has not yet been created, it will be created first.
-    ///
-    /// Core Haptics may stop the engine automatically under certain conditions (such as audio
-    /// session interruptions). Call this method before playback to ensure the engine is in a
-    /// running state.
-    ///
-    /// - Throws: Any error thrown while starting the engine.
-    @MainActor
-    public func startEngineIfNeeded() throws {
-        let engine = try getEngine()
+    let newEngine = try CHHapticEngine()
+    configureLifecycleHandlers(for: newEngine)
+    engine = newEngine
+    return newEngine
+  }
 
-        do {
-            try engine.start()
-        } catch {
-            throw error
-        }
+  /// Starts the shared engine if it is not already running.
+  ///
+  /// This method guarantees that the engine is ready to play haptic patterns. If the engine
+  /// has not yet been created, it will be created first.
+  ///
+  /// Core Haptics may stop the engine automatically under certain conditions (such as audio
+  /// session interruptions). Call this method before playback to ensure the engine is in a
+  /// running state.
+  ///
+  /// - Throws: Any error thrown while starting the engine.
+  public func startEngineIfNeeded() throws {
+    guard !isEngineRunning else { return }
+
+    let engine = try getEngine()
+
+    do {
+      try engine.start()
+      isEngineRunning = true
+    } catch {
+      isEngineRunning = false
+      throw error
     }
+  }
+
+  private func configureLifecycleHandlers(for engine: CHHapticEngine) {
+    engine.stoppedHandler = { _ in
+      Task { @MainActor in
+        HapticEngineManager.shared.handleEngineStopped()
+      }
+    }
+
+    engine.resetHandler = {
+      Task { @MainActor in
+        HapticEngineManager.shared.handleEngineReset()
+      }
+    }
+  }
+
+  private func handleEngineStopped() {
+    isEngineRunning = false
+  }
+
+  private func handleEngineReset() {
+    isEngineRunning = false
+
+    do {
+      try startEngineIfNeeded()
+    } catch {
+      return
+    }
+  }
 }

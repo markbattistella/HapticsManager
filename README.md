@@ -26,9 +26,14 @@ Add `HapticsManager` to your Swift project using Swift Package Manager.
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/markbattistella/HapticsManager", from: "1.0.0")
+  .package(url: "https://github.com/markbattistella/HapticsManager", from: "6.0.0")
 ]
 ```
+
+### Requirements
+
+- Swift 6.0+ (package targets build in Swift 6 language mode)
+- iOS 14.0+
 
 The package ships two targets:
 
@@ -56,15 +61,16 @@ This package works similarly to the SwiftUI `.sensoryFeedback` API but adds more
 
 With `HapticsManager`, you can easily determine if haptic feedback should be available for the user — simplifying your workflow and maintaining familiar, declarative syntax.
 
-The main advantage is that you can control the `isHapticsEnabled` key centrally, allowing or conditionally enabling haptic feedback without rewriting logic in every trigger. `.sensoryFeedback` would require you to implement this logic each time it's used.
+The main advantage is that you can control `HapticUserDefaultsKey.hapticEffectsEnabled` centrally, allowing or conditionally enabling haptic feedback without rewriting logic in every trigger. `.sensoryFeedback` would require you to implement this logic each time it's used.
 
 ## Usage
 
-There are three type of ways to use the `HapticsManager`:
+There are four ways to use `HapticsManager`:
 
 - **Static Action:** This is the simplest method, used when you want to trigger haptic feedback for a particular state change. It's consistent and straightforward — ideal when the haptic feedback needs to occur every time a specific condition (like a state variable changing) is met.
 - **Static Action with Condition:** This approach adds more control compared to the standard static action. Here, you specify a set of conditions to determine when the haptic feedback should be triggered. This allows you to handle more nuanced scenarios — such as only playing feedback when transitioning from one specific state to another, while ignoring others.
 - **Dynamic Action:** The most flexible of the three, dynamic actions let you determine the type of haptic feedback based on the old and new values during a state change. This means you can implement complex feedback behaviours that respond differently based on how the state transitions, allowing for a more dynamic and tailored user experience.
+- **Immediate Action:** Trigger feedback directly from a tap gesture or from inside an action handler with `inlineHaptic(_:)`.
 
 ### Static Action
 
@@ -250,9 +256,10 @@ Button("Submit") {
 This approach is:
 
 - The most reliable for Buttons
-- Guaranteed to fire exactly when called
+- Runs at the point it is called when haptics are available and enabled
 - Not dependent on SwiftUI gesture routing
 - Safe inside async tasks, callbacks, gesture recognisers, etc.
+- Automatically hops to the main actor when called off the main thread
 
 This mirrors UIKit’s pattern:
 
@@ -279,53 +286,36 @@ This is helpful if you want to add a settings screen for toggling haptics, or if
 
 #### Built-in UserDefaults Suite
 
-The package uses an internal, publicly exposed `UserDefaults` suite for storing haptic-related settings:
-
-```swift
-@main
-struct MyAwesomeApp: App {
-
-  init() {
-    UserDefaults.haptic.register([
-      HapticUserDefaultsKey.hapticEffectsEnabled : true
-    ])
-  }
-
-  var body: some Scene {
-    WindowGroup { ... }
-  }
-}
-```
-
-Or manually updating it:
+Haptics are enabled by default. To override that, write to the package's publicly exposed `UserDefaults.haptics` suite:
 
 ```swift
 Button("Turn haptics off") {
-  UserDefaults.haptics.set(false, for: HapticUserDefaultKeys.isHapticEnabled)
+  UserDefaults.haptics.set(false, for: HapticUserDefaultsKey.hapticEffectsEnabled)
 }
 
 Button("Turn haptics on") {
-  UserDefaults.haptics.set(true, for: HapticUserDefaultKeys.isHapticEnabled)
+  UserDefaults.haptics.set(true, for: HapticUserDefaultsKey.hapticEffectsEnabled)
 }
 ```
 
-> [!IMPORTANT]  
-> Although you can register `UserDefaults` to any suite (`.standard` or custom), the package will only respond to the internal `.haptic` suite to prevent unintended clashes across different parts of the application.
+> [!IMPORTANT]
+> The package only reads from the internal `.haptics` suite to prevent unintended clashes across different parts of the application.
 
 ## Extending Haptic Feedback Types
 
-If the built-in feedback types are not sufficient, you can create custom haptic patterns using the `.custom(CustomHaptic)` `Feedback` case.
+If the built-in feedback types are not sufficient, you can create custom haptic patterns using the `.custom(any CustomHaptic)` `HapticFeedback` case.
 
 ### Creating a Custom Feedback
 
 To add a custom haptic feedback type:
 
-1. Define a `CustomHaptic` conforming enum:
+1. Define a `CustomHaptic` conforming type. `CustomHaptic` is `Sendable`, and playback is main-actor isolated because Core Haptics work is performed on the shared haptic engine.
 
 ```swift
 enum MyCustomHapticPattern: CustomHaptic {
   case complexSuccess
 
+  @MainActor
   func play() {
     switch self {
       case .complexSuccess:
@@ -335,7 +325,7 @@ enum MyCustomHapticPattern: CustomHaptic {
 }
 ```
 
-1. Implement the `play()` function to define your custom haptic feedback:
+1. Implement the playback helper that builds your haptic pattern:
 
 > [!NOTE]
 > When creating custom haptic patterns, you do not need to create or manage a `CHHapticEngine` yourself. `CustomHaptic` provides a shared engine through `hapticEngine`, powered internally by `HapticEngineManager`, ensuring the engine is created once and kept alive for the lifetime of the app.
@@ -344,6 +334,7 @@ enum MyCustomHapticPattern: CustomHaptic {
 extension MyCustomHapticPattern {
 
   // From HWS: https://www.hackingwithswift.com/books/ios-swiftui/adding-haptic-effects
+  @MainActor
   func playComplexSuccessHaptic() {
     var events = [CHHapticEvent]()
 
@@ -351,8 +342,8 @@ extension MyCustomHapticPattern {
       let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(i))
       let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(i))
       let event = CHHapticEvent(
-        eventType: .hapticTransient, 
-        parameters: [intensity, sharpness], 
+        eventType: .hapticTransient,
+        parameters: [intensity, sharpness],
         relativeTime: i
       )
       events.append(event)
@@ -362,22 +353,19 @@ extension MyCustomHapticPattern {
       let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(1 - i))
       let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(1 - i))
       let event = CHHapticEvent(
-        eventType: .hapticTransient, 
-        parameters: [intensity, sharpness], 
+        eventType: .hapticTransient,
+        parameters: [intensity, sharpness],
         relativeTime: 1 + i
       )
       events.append(event)
     }
 
-    do {
-      let pattern = try CHHapticPattern(events: events, parameters: [])
-
-      // Play using the shared haptic engine
-      playPattern(pattern)
-
-    } catch {
-      print("Failed to play pattern: \(error.localizedDescription).")
+    guard let pattern = try? CHHapticPattern(events: events, parameters: []) else {
+      return
     }
+
+    // Play using the shared haptic engine
+    playPattern(pattern)
   }
 }
 ```
@@ -390,30 +378,33 @@ extension MyCustomHapticPattern {
 Button("isSuccess: \(isSuccess)") {
   isSuccess.toggle()
 }
-.hapticFeedback(.custom(.complexSuccess), trigger: isSuccess)
+.hapticFeedback(.custom(MyCustomHapticPattern.complexSuccess), trigger: isSuccess)
 ```
 
 ### Using your own engine configuration
 
-Within the `CHHapticPattern` you can use the same engine from `HapticsManager` but you can configure your own settings:
+Within a custom haptic, you can use the same engine from `HapticsManager` while configuring your own player behaviour:
 
 ```swift
-...
-do {
-  let pattern = try CHHapticPattern(events: events, parameters: [])
+@MainActor
+func playScheduledPattern(events: [CHHapticEvent]) {
+  guard
+    let pattern = try? CHHapticPattern(events: events, parameters: []),
+    let engine = try? hapticEngine,
+    let player = try? engine.makePlayer(with: pattern)
+  else {
+    return
+  }
 
-  let engine = try hapticEngine
-  let player = try engine.makePlayer(with: pattern)
-  try player.start(atTime: 10)
-} catch {
-...
+  try? player.start(atTime: 0)
+}
 ```
 
 ## Built-in Preset Library
 
 The optional `HapticsManagerPresets` target ships 151 named haptic patterns sourced from the [Pulsar](https://github.com/software-mansion/pulsar) open-source library (MIT licence).
 
-Each preset uses `CoreHaptics` directly, combining discrete transient events (sharp taps) with continuous events shaped by intensity and sharpness parameter curves. 106 of the 151 presets use both layers; the remaining 45 are purely transient — all expression comes from the timing and sharpness of individual taps.
+Each preset uses `CoreHaptics` directly. Presets may include transient events, continuous events shaped by intensity and sharpness parameter curves, or both. Some Pulsar presets are continuous-only, so their transient event lists are intentionally empty. When both layers are present, HapticsManager starts the continuous and transient patterns together, matching Pulsar’s player behaviour.
 
 ### Usage
 
@@ -438,10 +429,12 @@ Button("Submit") {
 }
 ```
 
-You can also call `.play()` directly when you need full control over timing:
+You can also call `.play()` directly from a main-actor context when you need full control over timing:
 
 ```swift
-HapticPreset.heartbeat.play()
+Button("Preview") {
+    HapticPreset.heartbeat.play()
+}
 ```
 
 ### Available presets

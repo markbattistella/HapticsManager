@@ -8,6 +8,19 @@ import Foundation
 import TriggerKit
 import UIKit
 
+/// Represents the different types of haptic feedback that can be performed.
+public enum HapticFeedback: Sendable {
+
+  /// Triggers an impact-style feedback with a specified intensity.
+  case impact(UIImpactFeedbackGenerator.FeedbackStyle)
+
+  /// Triggers a notification-style feedback with a specified type.
+  case notification(UINotificationFeedbackGenerator.FeedbackType)
+
+  /// Triggers a custom haptic feedback as defined by a `CustomHaptic` instance.
+  case custom(any CustomHaptic)
+}
+
 /// A performer for triggering haptic feedback in response to specific actions.
 ///
 /// This struct provides a unified interface for handling various types of haptic feedback,
@@ -19,73 +32,74 @@ public struct HapticFeedbackPerformer<T> where T: Equatable {}
 /// to act upon specific triggers.
 extension HapticFeedbackPerformer: TriggerActionPerformable {
 
-    /// The type of trigger that initiates the haptic feedback.
-    public typealias Trigger = T
+  /// The type of trigger that initiates the haptic feedback.
+  public typealias Trigger = T
 
-    /// Represents the different types of haptic feedback that can be performed.
-    public enum Feedback {
+  /// The action type performed when a trigger changes.
+  public typealias Feedback = HapticFeedback
 
-        /// Triggers an impact-style feedback with a specified intensity.
-        case impact(UIImpactFeedbackGenerator.FeedbackStyle)
+  /// Indicates whether haptic feedback is available on the device.
+  ///
+  /// - Returns: `true` if haptic feedback is supported by the device, otherwise `false`.
+  public static var isAvailable: Bool {
+    HapticFeedbackSettings.isHapticsAvailable
+  }
 
-        /// Triggers a notification-style feedback with a specified type.
-        case notification(UINotificationFeedbackGenerator.FeedbackType)
+  /// Indicates whether haptic feedback is enabled by the user or system settings.
+  ///
+  /// - Returns: `true` if haptic feedback is enabled, otherwise `false`.
+  public static var isEnabled: Bool {
+    HapticFeedbackSettings.isHapticsEnabled
+  }
 
-        /// Triggers a custom haptic feedback as defined by a `CustomHaptic` instance.
-        case custom(CustomHaptic)
+  /// Performs the specified haptic feedback action.
+  ///
+  /// - Parameter action: The type of feedback to perform. This can be an impact, notification,
+  ///   or custom feedback.
+  ///
+  /// The method first checks if haptic feedback is available and enabled before executing
+  /// the specified action.
+  public static func perform(_ action: Feedback) {
+    guard canPerform() else { return }
+
+    if Thread.isMainThread {
+      MainActor.assumeIsolated {
+        performHapticFeedbackOnMain(action)
+      }
+    } else {
+      Task { @MainActor in
+        performHapticFeedbackOnMain(action)
+      }
     }
-
-    /// Indicates whether haptic feedback is available on the device.
-    ///
-    /// - Returns: `true` if haptic feedback is supported by the device, otherwise `false`.
-    public static var isAvailable: Bool {
-        HapticFeedbackSettings.isHapticsAvailable
-    }
-
-    /// Indicates whether haptic feedback is enabled by the user or system settings.
-    ///
-    /// - Returns: `true` if haptic feedback is enabled, otherwise `false`.
-    public static var isEnabled: Bool {
-        HapticFeedbackSettings.isHapticsEnabled
-    }
-
-    /// Performs the specified haptic feedback action.
-    ///
-    /// - Parameter action: The type of feedback to perform. This can be an impact, notification,
-    ///   or custom feedback.
-    ///
-    /// The method first checks if haptic feedback is available and enabled before executing
-    /// the specified action.
-    public static func perform(_ action: Feedback) {
-        guard canPerform() else { return }
-
-        switch action {
-            case .impact(let feedbackStyle):
-                Task { @MainActor in
-                    let generator = UIImpactFeedbackGenerator(style: feedbackStyle)
-                    generator.impactOccurred()
-                }
-            case .notification(let feedbackType):
-                Task { @MainActor in
-                    let generator = UINotificationFeedbackGenerator()
-                    generator.notificationOccurred(feedbackType)
-                }
-            case .custom(let customHaptic):
-                Task { @MainActor in
-                    customHaptic.play()
-                }
-        }
-    }
+  }
 }
 
 // MARK: - Helper
 
 extension HapticFeedbackPerformer {
 
-    /// Checks whether haptic feedback can currently be performed.
-    ///
-    /// - Returns: `true` if haptic feedback is both available and enabled, otherwise `false`.
-    internal static func canPerform() -> Bool {
-        return isAvailable && isEnabled
-    }
+  /// Checks whether haptic feedback can currently be performed.
+  ///
+  /// - Returns: `true` if haptic feedback is both available and enabled, otherwise `false`.
+  internal static func canPerform() -> Bool {
+    return isAvailable && isEnabled
+  }
+}
+
+@MainActor
+private func performHapticFeedbackOnMain(_ action: HapticFeedback) {
+  switch action {
+  case .impact(let feedbackStyle):
+    let generator = UIImpactFeedbackGenerator(style: feedbackStyle)
+    generator.prepare()
+    generator.impactOccurred()
+
+  case .notification(let feedbackType):
+    let generator = UINotificationFeedbackGenerator()
+    generator.prepare()
+    generator.notificationOccurred(feedbackType)
+
+  case .custom(let customHaptic):
+    customHaptic.play()
+  }
 }
