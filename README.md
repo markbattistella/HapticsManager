@@ -26,7 +26,7 @@ Add `HapticsManager` to your Swift project using Swift Package Manager.
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/markbattistella/HapticsManager", from: "6.0.0")
+  .package(url: "https://github.com/markbattistella/HapticsManager", from: "26.5.23")
 ]
 ```
 
